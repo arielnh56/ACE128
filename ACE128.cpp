@@ -7,7 +7,6 @@
 
 // include description files for other libraries used 
 #include <Wire.h>
-#include <pgmspace.h>
 #include <ACE128.h>
 
 // Constructor /////////////////////////////////////////////////////////////////

@@ -4,6 +4,7 @@
 // Include the encoder library and maps
 #include <ACE128.h>  // Absolute Contact Encoder
 #include <ACE128map12345678.h> // mapping for pin order 12345678
+// #include <ACE128map12348765.h> // mapping for pin order 12348765 (module)
 #include <Wire.h> // I2C bus communication library - required to support ACE128
 
 // LiquidCrystal used by this program for display
@@ -12,7 +13,8 @@ LiquidCrystal lcd(7, 6, 5, 4, 3, 2); // your pins may vary
 
 // Create an ACE128 instance at address 0 (really 0x20) using the basic encoder map 
 // see the make_encodermap example sketch to create maps for alternate pin mappings
-ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678);
+ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678); // datasheet basics
+// ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12348765); // module
 
 // set-zero button on pin 13
 // pullup resistor - button to ground e.g. MakerShield button

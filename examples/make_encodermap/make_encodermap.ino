@@ -45,7 +45,7 @@ void setup() {
   Serial.print(pinString);
   Serial.print("_H_INCLUDED\n");
   Serial.print("#include <avr/pgmspace.h>\n\n");
-  Serial.print("PROGMEM extern const prog_uchar encoderMap_");
+  Serial.print("PROGMEM extern const uint8_t encoderMap_");
   Serial.print(pinString);
   Serial.print("[256] = {\n  ");
   for (i=0; i<16; i++) {        // 16 lines
