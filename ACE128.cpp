@@ -1,6 +1,7 @@
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013 Alastair Young.  All right reserved.
+  Copyright (c) 2013,2015 Alastair Young.
+  This project is licensed under the terms of the MIT license.
 */
 
 #include <Arduino.h>;
@@ -15,8 +16,16 @@
 ACE128::ACE128(uint8_t i2caddr, uint8_t *map)
 {
   // initialize this instance's variables
-  i2caddr &= 0x7;                          // 3 bits of address
-  _i2caddr = i2caddr | MCP23008_ADDRESS;   // map to MCP23008
+  if ((i2caddr & 0x78) == PCF8574_ADDRESS || (i2caddr & 0x78) == PCF8574A_ADDRESS)
+  {
+    _i2caddr = i2caddr;                      // save address
+    _chip = PCF8574A_ADDRESS;                // PCF8574 shares address space with MCP23008
+  }
+  else                                       // use zero-indexed address to identify MCP23008 - backwards compatible
+  {
+    _i2caddr = (i2caddr & 0x7) | MCP23008_ADDRESS;   // map lower bits to MCP23008
+    _chip = MCP23008_ADDRESS;                // remember what chip
+  }
   _reverse = false;                        // clockwise
   _zero = 0;                               // set zero position
   _map = map;                              // mapping table in PROGMEM
@@ -27,21 +36,28 @@ ACE128::ACE128(uint8_t i2caddr, uint8_t *map)
  
 void ACE128::begin()
 {
-  // initialize the MCP23008
+  // initialize the chip
   Wire.begin();        // join i2c bus (address optional for master)
   Wire.beginTransmission(_i2caddr);
-  Wire.write((uint8_t)MCP23008_IODIR); // MCP23008 lets us blast all registers
-  Wire.write((uint8_t)0xFF);  // IODIR all inputs
-  Wire.write((uint8_t)0x00);  // IPOL  do not invert
-  Wire.write((uint8_t)0x00);  // GPINTEN disable interrupt 
-  Wire.write((uint8_t)0x00);  // DEFVAL disabled
-  Wire.write((uint8_t)0x00);  // INTCON disabled
-  Wire.write((uint8_t)0x00);  // IOCON no special config
-  Wire.write((uint8_t)0xFF);  // GPPU pullup all inputs
-  Wire.write((uint8_t)0x00);  // INTF disabled
-  Wire.write((uint8_t)0x00);  // INTCAP disabled
-  Wire.write((uint8_t)0x00);  // GPIO 
-  Wire.write((uint8_t)0x00);  // OLAT
+  if (_chip == MCP23008_ADDRESS)
+  {
+    Wire.write((uint8_t)MCP23008_IODIR); // MCP23008 lets us blast all registers
+    Wire.write((uint8_t)0xFF);  // IODIR all inputs
+    Wire.write((uint8_t)0x00);  // IPOL  do not invert
+    Wire.write((uint8_t)0x00);  // GPINTEN disable interrupt 
+    Wire.write((uint8_t)0x00);  // DEFVAL disabled
+    Wire.write((uint8_t)0x00);  // INTCON disabled
+    Wire.write((uint8_t)0x00);  // IOCON no special config
+    Wire.write((uint8_t)0xFF);  // GPPU pullup all inputs
+    Wire.write((uint8_t)0x00);  // INTF disabled
+    Wire.write((uint8_t)0x00);  // INTCAP disabled
+    Wire.write((uint8_t)0x00);  // GPIO 
+    Wire.write((uint8_t)0x00);  // OLAT
+  }
+  else if (_chip == PCF8574A_ADDRESS)
+  {
+    Wire.write((uint8_t)0xFF);  // set all pins up. pulldown for input
+  }
   Wire.endTransmission();
 
   _zero = rawPos(); // set zero to where we happen to be
@@ -56,9 +72,12 @@ void ACE128::begin()
 uint8_t ACE128::acePins(void)
 {
   // read one byte from the GPIO
-  Wire.beginTransmission(_i2caddr);
-  Wire.write((uint8_t)MCP23008_GPIO);
-  Wire.endTransmission();
+  if (_chip == MCP23008_ADDRESS)
+  {
+    Wire.beginTransmission(_i2caddr);
+    Wire.write((uint8_t)MCP23008_GPIO);
+    Wire.endTransmission();
+  }
   Wire.requestFrom(_i2caddr, 1);
   return(Wire.read());
 }

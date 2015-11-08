@@ -44,7 +44,6 @@ void setup() {
   Serial.print("#define ACE128MAP");
   Serial.print(pinString);
   Serial.print("_H_INCLUDED\n");
-  Serial.print("#include <avr/pgmspace.h>\n\n");
   Serial.print("PROGMEM extern const uint8_t encoderMap_");
   Serial.print(pinString);
   Serial.print("[256] = {\n  ");
