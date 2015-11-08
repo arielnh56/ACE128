@@ -78,10 +78,5 @@ example sketch - copy the serial monitor output to a new .h file in the ACE128 f
 12345678 is for the "rising counter clockwise" wiring, which matches the datasheet
 numbers and is recommended for breadboard testing. 
 
-Eagle design files are included. These are tested and work. Encoder can be mounted on
-rear of board though soldering is tricky, or on front of board either into female
-headers, or onto male header after removing the original pins. These need either the
-12348765 or 43215678 maps, depending on which way round you mount it.
-
 comments and feedback via http://redhunter.com 
 
