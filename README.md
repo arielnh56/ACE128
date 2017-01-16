@@ -1,3 +1,5 @@
+!(http://www.bourns.com/images/Products/encoders/dataprodline_sensors_controls_enc_contact.jpg)
+
 This library provides support for the Bourns EAW - Absolute Contacting Encoder (ACE) 
 
 Datasheet: https://www.bourns.com/pdfs/ace.pdf
@@ -13,9 +15,9 @@ The code currently supports the MCP23008, PCF8574 and PCF8574A I2C expanders
 
 Select these with the following addresses
 
-0x00 - 0x07 MCP23008 addresses 0x20-0x27. (This is backward compatible with an earlier library revision)
-0x20 - 0x27 PCF8574
-0x38 - 0x3F PCF8574A
+* 0x00 - 0x07 MCP23008 addresses 0x20-0x27. (This is backward compatible with an earlier library revision)
+* 0x20 - 0x27 PCF8574
+* 0x38 - 0x3F PCF8574A
 
 Note that the MCP23008 and PCF8574 chips use the same i2c address range. Many LCD backpacks also use one of these chips. Be careful when mixing all this on the same bus to avoid duplicating addresses. To confuse things further, raw I2C addresses have the lowest order bit as a read/write signal, so some documents, like some of the PCF8574 datasheets, will refer to 0x40 and 0x70 which is 0x20 and 0x38 shifted left one bit.
 
