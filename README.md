@@ -65,7 +65,8 @@ refer to it.
 to set the current position as zero and then store the rawPos() value to EEPROM,
 where I can read it back reset zero values at startup. 
 
-![Here is a breadboard setup which should work with the ACE128test sketch](https://github.com/arielnh56/ACE128/extras/ace128test.jpg)
+Here is a breadboard setup which should work with the ACE128test sketch
+![Breadboard](https://github.com/arielnh56/ACE128/extras/ace128test.jpg)
 The Fritzing file for this is in the extras folder.
 
 Encoder Maps
