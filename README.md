@@ -1,4 +1,4 @@
-!(http://www.bourns.com/images/Products/encoders/dataprodline_sensors_controls_enc_contact.jpg)
+![Bourns ACE-128](http://www.bourns.com/images/Products/encoders/dataprodline_sensors_controls_enc_contact.jpg)
 
 This library provides support for the Bourns EAW - Absolute Contacting Encoder (ACE) 
 
