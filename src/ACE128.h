@@ -46,6 +46,9 @@ class ACE128
     int8_t _reverse;               // counter-clockwise 
     int _i2caddr;                  // i2c bus address
     uint8_t *_map;                 // pointer to PROGMEM map table
+    int16_t _mpos;                 // multiturn offset
+    int8_t _lastpos;               // last upos
+    int16_t _eeAddr;               // multiturn save location (2 bytes)
 };
 
 

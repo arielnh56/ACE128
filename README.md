@@ -67,9 +67,9 @@ mechanically arbitrary spot. When it rolls over the turns are stored for use by 
 * Once per loop(), call pos(), upos(), or mpos() and store the value in a variable. Accessing i2c bus takes some cycles, so don't call pos() everytime you want to
 refer to it. 
 * there are three setting functions
-** setZero()   - set the current location to zero (does not update multiturn)
-** setZero(int)   -  sets the zero point to the 0-127 number given
-** setMpos(int)    - sets the current location as this multiturn value
+* setZero()   - set the current location to zero (does not update multiturn)
+* setZero(int)   -  sets the zero point to the 0-127 number given
+* setMpos(int)    - sets the current location as this multiturn value
 
 Encoder Maps
 --------------------------------------------------------------------------------
@@ -88,4 +88,5 @@ numbers and is recommended for breadboard testing.
 comments and feedback via https://github.com/arielnh56/ACE128
 
 more details and videos at https://hackaday.io/project/19463-digital-knob-for-arduino-i2c-absolute-encoder
+
 buy assembled units at https://www.tindie.com/products/arielnh56/digital-knob-for-arduino-i2c-absolute-encoder/
