@@ -24,9 +24,11 @@ Note that the MCP23008 and PCF8574 chips use the same i2c address range. Many LC
 Installation
 --------------------------------------------------------------------------------
 
-This library now conforms to the library manager standard, so it needs no special instructions here. See https://www.arduino.cc/en/Guide/Libraries
+This library now conforms to the library manager standard, so it needs no special instructions here.
+See https://www.arduino.cc/en/Guide/Libraries
 
-The enclosed exmple sketch ACE128test drives a 2x16 display direct from the Arduino without a backpack.
+The enclosed exmple sketch ACE128test drives a 2x16 display via either and I2C backpack or direct from the Arduino, depending on whether 
+you comment out the LCD_I2C macro.
 
 Public Methods
 --------------------------------------------------------------------------------
@@ -36,10 +38,14 @@ Public Methods
     // constructor takes i2caddr (see above) and pointer to PROGMEM map table
     // example: ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678);
     // see make_encodermap example sketch for alternate pin mappings 
-    ACE128(uint8_t i2caddr, uint8_t *map); 
+    ACE128(uint8_t i2caddr, uint8_t *map);
+    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
     void begin();                  // initializes IO expander, call from setup()
     uint8_t upos();                // returns logical position 0 -> 127
     int8_t pos();                  // returns logical position -64 -> +63
+    int16_t mpos();                // returns multiturn position -32768 -> +32767
+    void setMpos(int16_t mPos);    // sets current position to multiturn value - also changes zero
+    void setZero();                // sets logical zero to current position
     void setZero(uint8_t rawPos);  // sets logical zero position
     uint8_t getZero();             // returns logical zero position
     uint8_t rawPos();              // returns raw mechanical position
@@ -53,23 +59,17 @@ See the ACE128test example.
 * Include all the encoder maps you need (see below) to match the pin sequences
 of your ACE units. 
 * Declare all your ACE128 objects using the ACE128 constructor. It takes an I2C address and a pointer to the encoder map.
-* call the begin method for each ACE128 object from setup().
-* Within setup you may also want to call setZero() using a stored rawPos(). The
-pos() and upos() methods return the position relative to a logical zero
+    An optional third integer can take a positive integer to show where to store zero info in eeprom. Allow for three bytes.
+* call the begin method for each ACE128 object from setup(). This will use the eeprom settings or fall back to setting the current position as zero.
+* The pos() and upos() methods return the position relative to a logical zero
 position rather than the zero position returned by the encoder, which is in a
-mechanically arbitrary spot.
-* Once per loop(), call pos() or upos() and store the value in a variable. Accessing i2c bus takes some cycles, so don't call pos() everytime you want to
+mechanically arbitrary spot. When it rolls over the turns are stored for use by mpos and saved in eeprom
+* Once per loop(), call pos(), upos(), or mpos() and store the value in a variable. Accessing i2c bus takes some cycles, so don't call pos() everytime you want to
 refer to it. 
-* I like to include a zero-set routine which will call 
-    myACE.setZero(myACE.rawPos())
-to set the current position as zero and then store the rawPos() value to EEPROM,
-where I can read it back reset zero values at startup. 
-
-Here is a breadboard setup which should work with the ACE128test sketch
-
-![Breadboard](https://github.com/arielnh56/ACE128/blob/master/extras/ace128test_bb.jpg)
-
-The Fritzing file for this is in the extras folder.
+* there are three setting functions
+** setZero()   - set the current location to zero (does not update multiturn)
+** setZero(int)   -  sets the zero point to the 0-127 number given
+** setMpos(int)    - sets the current location as this multiturn value
 
 Encoder Maps
 --------------------------------------------------------------------------------
@@ -87,4 +87,5 @@ numbers and is recommended for breadboard testing.
 
 comments and feedback via https://github.com/arielnh56/ACE128
 
-
+more details and videos at https://hackaday.io/project/19463-digital-knob-for-arduino-i2c-absolute-encoder
+buy assembled units at https://www.tindie.com/products/arielnh56/digital-knob-for-arduino-i2c-absolute-encoder/

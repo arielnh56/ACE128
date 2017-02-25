@@ -1,6 +1,6 @@
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013,2015 Alastair Young.
+  Copyright (c) 2013,2015,2017 Alastair Young.
   This project is licensed under the terms of the MIT license.
 */
 
@@ -26,10 +26,14 @@ class ACE128
     // 0x00 - 0x07 MCP23008 addresses 0x20-0x27. Backward compatible with earlier library revision
     // 0x20 - 0x27 PCF8574
     // 0x38 - 0x3F PCF8574A
-    ACE128(uint8_t i2caddr, uint8_t *map); 
+    ACE128(uint8_t i2caddr, uint8_t *map);
+    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
     void begin();                  // initializes IO expander, call from setup()
     uint8_t upos();                // returns logical position 0 -> 127
     int8_t pos();                  // returns logical position -64 -> +63
+    int16_t mpos();                // returns multiturn position -32768 -> +32767
+    void setMpos(int16_t mPos);    // sets current position to multiturn value - also changes zero
+    void setZero();                // sets logical zero to current position
     void setZero(uint8_t rawPos);  // sets logical zero position
     uint8_t getZero();             // returns logical zero position
     uint8_t rawPos();              // returns raw mechanical position
@@ -39,29 +43,29 @@ class ACE128
   private:
     uint8_t _chip;                 // chip type - derived from i2c address
     uint8_t _zero;                 // raw position of logical zero
-    int8_t _reverse;              // counter-clockwise 
+    int8_t _reverse;               // counter-clockwise 
     int _i2caddr;                  // i2c bus address
     uint8_t *_map;                 // pointer to PROGMEM map table
 };
 
 
 // MCP23008 IO expander 
-#define MCP23008_ADDRESS 0x20
-#define MCP23008_IODIR 0x00
-#define MCP23008_IPOL 0x01
-#define MCP23008_GPINTEN 0x02
-#define MCP23008_DEFVAL 0x03
-#define MCP23008_INTCON 0x04
-#define MCP23008_IOCON 0x05
-#define MCP23008_GPPU 0x06
-#define MCP23008_INTF 0x07
-#define MCP23008_INTCAP 0x08
-#define MCP23008_GPIO 0x09
-#define MCP23008_OLAT 0x0A
+#define ACE128_MCP23008_ADDRESS 0x20
+#define ACE128_MCP23008_IODIR 0x00
+#define ACE128_MCP23008_IPOL 0x01
+#define ACE128_MCP23008_GPINTEN 0x02
+#define ACE128_MCP23008_DEFVAL 0x03
+#define ACE128_MCP23008_INTCON 0x04
+#define ACE128_MCP23008_IOCON 0x05
+#define ACE128_MCP23008_GPPU 0x06
+#define ACE128_MCP23008_INTF 0x07
+#define ACE128_MCP23008_INTCAP 0x08
+#define ACE128_MCP23008_GPIO 0x09
+#define ACE128_MCP23008_OLAT 0x0A
 
 // PCF8574 family
-#define PCF8574_ADDRESS 0x20
-#define PCF8574A_ADDRESS 0x38
+#define ACE128_PCF8574_ADDRESS 0x20
+#define ACE128_PCF8574A_ADDRESS 0x38
 
 #endif // ACE128_h
 

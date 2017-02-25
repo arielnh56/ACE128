@@ -1,34 +1,37 @@
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013,2015 Alastair Young.
+  Copyright (c) 2013,2015,2017 Alastair Young.
   This project is licensed under the terms of the MIT license.
 */
 
-#include <Arduino.h>;
+#include <Arduino.h>
 
 // include description files for other libraries used 
 #include <Wire.h>
 #include <ACE128.h>
-
+#include <EEPROM.h>
 // Constructor /////////////////////////////////////////////////////////////////
 // Function that handles the creation and setup of instances
 
-ACE128::ACE128(uint8_t i2caddr, uint8_t *map)
+ACE128::ACE128(uint8_t i2caddr, uint8_t *map) : ACE128::ACE128(i2caddr, map, -1) {}
+
+ACE128::ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr)
 {
   // initialize this instance's variables
-  if ((i2caddr & 0x78) == PCF8574_ADDRESS || (i2caddr & 0x78) == PCF8574A_ADDRESS)
+  if ((i2caddr & 0x78) == ACE128_PCF8574_ADDRESS || (i2caddr & 0x78) == ACE128_PCF8574A_ADDRESS)
   {
     _i2caddr = i2caddr;                      // save address
-    _chip = PCF8574A_ADDRESS;                // PCF8574 shares address space with MCP23008
+    _chip = ACE128_PCF8574A_ADDRESS;         // PCF8574 shares address space with MCP23008
   }
   else                                       // use zero-indexed address to identify MCP23008 - backwards compatible
   {
-    _i2caddr = (i2caddr & 0x7) | MCP23008_ADDRESS;   // map lower bits to MCP23008
-    _chip = MCP23008_ADDRESS;                // remember what chip
+    _i2caddr = (i2caddr & 0x7) | ACE128_MCP23008_ADDRESS;   // map lower bits to MCP23008
+    _chip = ACE128_MCP23008_ADDRESS;                        // remember what chip
   }
   _reverse = false;                        // clockwise
   _zero = 0;                               // set zero position
   _map = map;                              // mapping table in PROGMEM
+  _eeAddr = eeAddr;                       // multiturn save location
 }
 
 // Initializer /////////////////////////////////////////////////////////////////
@@ -39,9 +42,9 @@ void ACE128::begin()
   // initialize the chip
   Wire.begin();        // join i2c bus (address optional for master)
   Wire.beginTransmission(_i2caddr);
-  if (_chip == MCP23008_ADDRESS)
+  if (_chip == ACE128_MCP23008_ADDRESS)
   {
-    Wire.write((uint8_t)MCP23008_IODIR); // MCP23008 lets us blast all registers
+    Wire.write((uint8_t)ACE128_MCP23008_IODIR); // MCP23008 lets us blast all registers
     Wire.write((uint8_t)0xFF);  // IODIR all inputs
     Wire.write((uint8_t)0x00);  // IPOL  do not invert
     Wire.write((uint8_t)0x00);  // GPINTEN disable interrupt 
@@ -54,13 +57,23 @@ void ACE128::begin()
     Wire.write((uint8_t)0x00);  // GPIO 
     Wire.write((uint8_t)0x00);  // OLAT
   }
-  else if (_chip == PCF8574A_ADDRESS)
+  else if (_chip == ACE128_PCF8574A_ADDRESS)
   {
     Wire.write((uint8_t)0xFF);  // set all pins up. pulldown for input
   }
   Wire.endTransmission();
 
-  _zero = rawPos(); // set zero to where we happen to be
+  _lastpos = rawPos();
+  if (_eeAddr >= 0)
+  {
+    EEPROM.get(_eeAddr, _mpos);     
+    EEPROM.get(_eeAddr + sizeof(_mpos), _zero);
+  }
+  else
+  {
+    _mpos = 0;
+    _zero = _lastpos; // set zero to where we happen to be
+  }
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
@@ -72,10 +85,10 @@ void ACE128::begin()
 uint8_t ACE128::acePins(void)
 {
   // read one byte from the GPIO
-  if (_chip == MCP23008_ADDRESS)
+  if (_chip == ACE128_MCP23008_ADDRESS)
   {
     Wire.beginTransmission(_i2caddr);
-    Wire.write((uint8_t)MCP23008_GPIO);
+    Wire.write((uint8_t)ACE128_MCP23008_GPIO);
     Wire.endTransmission();
   }
   Wire.requestFrom(_i2caddr, 1);
@@ -116,11 +129,39 @@ int8_t ACE128::pos(void)
   return(pos);
 }
 
+int16_t ACE128::mpos(void)
+{
+  int8_t currentpos = pos();
+  if (_lastpos - currentpos > 0x40)    // more than half a turn smaller - we rolled up
+  {
+    _mpos += 0x80;
+  }
+  else if (currentpos - _lastpos > 0x40)   // more than half a turn bigger - we rolled down
+  {
+    _mpos -= 0x80;
+  }
+  if (_eeAddr >= 0)
+  {
+    EEPROM.put(_eeAddr, _mpos);     
+  }
+  _lastpos = currentpos;
+  return _mpos + currentpos;
+}
+
 // sets logical zero position
-// use myACE.setZero(myACE.rawPos()) to set current position to zero 
 void ACE128::setZero(uint8_t rawPos)
 {
   _zero = rawPos & 0x7f;  // mask to 7bit
+  if (_eeAddr >= 0)
+  {
+    EEPROM.update(_eeAddr + sizeof(_mpos), _zero);
+  }
+}
+
+// set current position to zero 
+void ACE128::setZero()
+{
+  setZero(rawPos());
 }
 
 // returns current logical zero
@@ -128,6 +169,19 @@ uint8_t ACE128::getZero(void)
 {
   return(_zero);
 }
+
+// set multiturn position
+// this also sets zero, so if you are saving zero, call setZero() afterwards.
+void ACE128::setMpos(int16_t mPos)
+{
+  setZero(rawPos() - (mPos & 0x7f));  // mask to 7bit
+  _mpos = mPos & 0xFF80;          // mask higher 9 bits
+  if (_eeAddr >= 0)
+  {
+    EEPROM.put(_eeAddr, _mpos);     
+  }
+}
+
 
 // set reverse if true - i.e. counter-clockwise
 void ACE128::reverse(boolean reverse)
