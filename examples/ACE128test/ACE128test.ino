@@ -27,7 +27,7 @@
 
 #ifdef LCD_I2C
 #include <LiquidCrystal_PCF8574.h>
-LiquidCrystal_PCF8574 lcd(0x27);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+LiquidCrystal_PCF8574 lcd(LCD_I2C_ADDR);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 #else // use direct wire liquidcrystal library
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(7, 6, 5, 4, 3, 2); // your pins may vary
@@ -66,7 +66,7 @@ void setup() {
     lcd.print("looking for");
     lcd.setCursor(0, 1);
     lcd.print("ACE-128");
-    Wire.beginTransmission(0x38);
+    Wire.beginTransmission(ACE_ADDR);
     error = Wire.endTransmission();
   }
   myACE.begin();    // this is required for each instance, initializes the IO expander
