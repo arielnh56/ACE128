@@ -63,16 +63,17 @@ void ACE128::begin()
   }
   Wire.endTransmission();
 
-  _lastpos = rawPos();
   if (_eeAddr >= 0)
   {
     EEPROM.get(_eeAddr, _mpos);     
     EEPROM.get(_eeAddr + sizeof(_mpos), _zero);
+    _lastpos = pos();
   }
   else
   {
     _mpos = 0;
-    _zero = _lastpos; // set zero to where we happen to be
+    _zero = rawPos(); // set zero to where we happen to be
+    _lastpos = 0;
   }
 }
 
@@ -131,12 +132,12 @@ int8_t ACE128::pos(void)
 
 int16_t ACE128::mpos(void)
 {
-  int8_t currentpos = pos();
-  if (_lastpos - currentpos > 0x40)    // more than half a turn smaller - we rolled up
+  int16_t currentpos = pos();
+  if ((int16_t)_lastpos - currentpos > 0x40)    // more than half a turn smaller - we rolled up
   {
     _mpos += 0x80;
   }
-  else if (currentpos - _lastpos > 0x40)   // more than half a turn bigger - we rolled down
+  else if (currentpos - (int16_t)_lastpos > 0x40)   // more than half a turn bigger - we rolled down
   {
     _mpos -= 0x80;
   }
@@ -174,8 +175,9 @@ uint8_t ACE128::getZero(void)
 // this also sets zero, so if you are saving zero, call setZero() afterwards.
 void ACE128::setMpos(int16_t mPos)
 {
-  setZero(rawPos() - (mPos & 0x7f));  // mask to 7bit
+  setZero(rawPos() - (uint8_t)(mPos & 0x7f));  // mask to 7bit
   _mpos = mPos & 0xFF80;          // mask higher 9 bits
+  _lastpos=pos();
   if (_eeAddr >= 0)
   {
     EEPROM.put(_eeAddr, _mpos);     
