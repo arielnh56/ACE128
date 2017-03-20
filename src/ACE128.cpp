@@ -176,7 +176,7 @@ uint8_t ACE128::getZero(void)
 void ACE128::setMpos(int16_t mPos)
 {
   setZero(rawPos() - (uint8_t)(mPos & 0x7f));  // mask to 7bit
-  _mpos = mPos & 0xFF80;          // mask higher 9 bits
+  _mpos = (mPos - pos()) & 0xFF80;          // mask higher 9 bits
   _lastpos=pos();
   if (_eeAddr >= 0)
   {
