@@ -116,8 +116,10 @@ uint8_t ACE128::upos(void)
 // returns signed position -64 - +63
 int8_t ACE128::pos(void)
 {
-  uint8_t pos;  
-  pos = rawPos(); // read encoder and convert
+  return(_raw2pos(rawPos()));
+}
+
+int8_t ACE128::_raw2pos(int8_t pos) { 
   pos -= _zero;   // adjust for logical zero
   if (_reverse) pos *= -1;    // reverse direction
   // 7bit signed numbers need to copy their neg bit to the 8bit position
@@ -174,8 +176,10 @@ uint8_t ACE128::getZero(void)
 // this also sets zero, so if you are saving zero, call setZero() afterwards.
 void ACE128::setMpos(int16_t mPos)
 {
-  setZero(rawPos() - (mPos & 0x7f));  // mask to 7bit
-  _mpos = mPos & 0xFF80;          // mask higher 9 bits
+   uint8_t rawpos = rawPos();
+   setZero(rawpos - (uint8_t)(mPos & 0x7f));  // mask to 7bit
+  _lastpos = _raw2pos(rawpos);
+  _mpos = (mPos - _lastpos) & 0xFF80;          // mask higher 9 bits
   if (_eeAddr >= 0)
   {
     EEPROM.put(_eeAddr, _mpos);     

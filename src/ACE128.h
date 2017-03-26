@@ -49,6 +49,7 @@ class ACE128
     int16_t _mpos;                 // multiturn offset
     int8_t _lastpos;               // last upos
     int16_t _eeAddr;               // multiturn save location (2 bytes)
+    int8_t _raw2pos(int8_t pos);   // convert rawPos() value to pos()
 };
 
 
