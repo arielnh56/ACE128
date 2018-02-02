@@ -26,6 +26,7 @@ class ACE128
     // 0x00 - 0x07 MCP23008 addresses 0x20-0x27. Backward compatible with earlier library revision
     // 0x20 - 0x27 PCF8574
     // 0x38 - 0x3F PCF8574A
+    ACE128(byte pinOrder[], uint8_t *map);
     ACE128(uint8_t i2caddr, uint8_t *map);
     ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
     void begin();                  // initializes IO expander, call from setup()
@@ -39,6 +40,10 @@ class ACE128
     uint8_t rawPos();              // returns raw mechanical position
     uint8_t acePins();             // returns gray code inputs
     void reverse(boolean reverse); // set counter-clockwise operation
+
+    void begin8Pins();
+    uint8_t get8pinsrawPos();	   //read position from 8 pins
+
     // library-accessible "private" interface
   private:
     uint8_t _chip;                 // chip type - derived from i2c address
@@ -50,6 +55,12 @@ class ACE128
     int8_t _lastpos;               // last upos
     int16_t _eeAddr;               // multiturn save location (2 bytes)
     int8_t _raw2pos(int8_t pos);   // convert rawPos() value to pos()
+
+    byte pinOrder_[8];
+    uint8_t pos8pins_;		   //position  from 8 pins
+    bool rawDataFrom8Pins_;
+
+
 };
 
 

@@ -13,11 +13,29 @@
 // Constructor /////////////////////////////////////////////////////////////////
 // Function that handles the creation and setup of instances
 
+
+ACE128::ACE128(byte pinOrder[8], uint8_t *map) {
+  
+  rawDataFrom8Pins_ = true;
+
+  for (int pin=0; pin <= 7; pin++) 
+    {
+      pinOrder_[pin] = pinOrder[pin];
+    }
+    
+  _reverse = false;                        // clockwise
+  _zero = 0;                               // set zero position
+  _map = map;                              // mapping table in PROGMEM
+
+}
+
 ACE128::ACE128(uint8_t i2caddr, uint8_t *map) : ACE128::ACE128(i2caddr, map, -1) {}
 
 ACE128::ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr)
 {
+
   // initialize this instance's variables
+  rawDataFrom8Pins_ = false;
   if ((i2caddr & 0x78) == ACE128_PCF8574_ADDRESS || (i2caddr & 0x78) == ACE128_PCF8574A_ADDRESS)
   {
     _i2caddr = i2caddr;                      // save address
@@ -77,6 +95,14 @@ void ACE128::begin()
   }
 }
 
+void ACE128::begin8Pins()
+{
+    for (int pin=0; pin <= 7; pin++) {pinMode(pinOrder_[pin],INPUT);}
+    _mpos = 0;
+    _zero = rawPos(); // set zero to where we happen to be
+    _lastpos = 0;
+}
+
 // Public Methods //////////////////////////////////////////////////////////////
 // Functions available in Wiring sketches, this library, and other libraries
 
@@ -96,11 +122,25 @@ uint8_t ACE128::acePins(void)
   return(Wire.read());
 }
 
+uint8_t ACE128::get8pinsrawPos()
+{
+  pos8pins_ = 0;
+
+  for (int pin=0; pin <= 7; pin++) 
+  {
+    pos8pins_ |= (digitalRead(pinOrder_[pin])<<pin); //set bit_number (0 to 7)
+  }
+
+	return(pos8pins_);
+}
+
 // returns current raw position
 uint8_t ACE128::rawPos(void)
 {
   // look up our raw position in the mapping table
-  return(pgm_read_byte(_map + acePins()));
+  if(rawDataFrom8Pins_ == true){return(pgm_read_byte(_map + get8pinsrawPos()));}
+  if(rawDataFrom8Pins_ == false){return(pgm_read_byte(_map + acePins()));}
+	
 }
 
 // returns unsigned position 0 - 127
