@@ -1,0 +1,31 @@
+#######################################
+# Syntax Coloring Map For Test
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ACE128	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+pos	KEYWORD2
+upos	KEYWORD2
+setZero	KEYWORD2
+getZero	KEYWORD2
+rawPos	KEYWORD2
+acePins	KEYWORD2
+reverse	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
