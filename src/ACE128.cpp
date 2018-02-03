@@ -1,6 +1,6 @@
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013,2015,2017 Alastair Young.
+  Copyright (c) 2013,2015,2017,2018 Alastair Young.
   This project is licensed under the terms of the MIT license.
 */
 

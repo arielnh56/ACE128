@@ -1,11 +1,11 @@
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013,2015,2017 Alastair Young.
+  Copyright (c) 2013,2015,2017,2018 Alastair Young.
   This project is licensed under the terms of the MIT license.
 */
 
 // ensure this library description is only included once
-#ifndef ACE28_h
+#ifndef ACE128_h
 #define ACE128_h
 
 // include types & constants of Wiring core API
@@ -19,15 +19,17 @@ class ACE128
 {
     // user-accessible "public" interface
   public:
-    // constructor takes i2caddr and pointer to PROGMEM map table
+    // I2C constructor takes i2caddr and pointer to PROGMEM map table
     // example: ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678);
     // see make_encodermap example sketch for alternate pin mappings
     // Select with the following addresses
     // 0x00 - 0x07 MCP23008 addresses 0x20-0x27. Backward compatible with earlier library revision
     // 0x20 - 0x27 PCF8574
     // 0x38 - 0x3F PCF8574A
+    // final optional eeAddr parameter sets and enables EEPROM state save for logical zero and multiturn position
     ACE128(uint8_t i2caddr, uint8_t *map);
     ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
+    // direct pin constructors are similar but instead of the I2C address, you list the 8 arduino pins used
     ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map);
     ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map, int16_t eeAddr);
     void begin();                  // initializes IO expander, call from setup()
