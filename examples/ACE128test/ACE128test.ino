@@ -41,11 +41,12 @@ LiquidCrystal lcd(7, 6, 5, 4, 3, 2); // your pins may vary
 // they count the read/write bit in the address, which is a source of confusion
 // Create an ACE128 instance called myACE at address 0 (really 0x20) using the basic encoder map
 // ACE128 myACE((uint8_t)0x00, (uint8_t*)encoderMap_12345678, -1); // datasheet basics - MCP23008
-ACE128 myACE((uint8_t)ACE_ADDR, (uint8_t*)encoderMap_87654321); // backpack module
+ACE128 myACE((uint8_t)ACE_ADDR, (uint8_t*)encoderMap_87654321); // backpack module - no save
+// ACE128 myACE((uint8_t)ACE_ADDR, (uint8_t*)encoderMap_87654321, 0); // backpack module - save position 0
 
-// set-zero button on pin 13
+// set-zero button on pin 5
 // - button to ground e.g. MakerShield button
-const int ZERO = 13;
+const int ZERO = 5;
 uint8_t pinPos = 0; // pin values from MCP23008 or PCF8574
 uint8_t rawPos = 0;
 uint8_t upos = 0;
@@ -128,5 +129,3 @@ void loop() {
     }
   }
 }
-
-

@@ -8,9 +8,38 @@
 #ifndef ACE128_h
 #define ACE128_h
 
+// Set up EEPROM storage option
+// Uncomment one of these to override default behavior
+// #define ACE128_EEPROM_AVR  // Default AVR internal EEPROM.h
+// #define ACE128_EEPROM_NONE // No EEPROM storage - default for SAM
+// #define ACE128_EEPROM_I2C  // I2C EEPROM
+
+// ensure mutual exclusion and defaults
+#if defined(ACE128_EEPROM_AVR)
+#undef ACE128_EEPROM_NONE
+#undef ACE128_EEPROM_I2C
+#elif defined(ACE128_EEPROM_NONE)
+#undef ACE128_EEPROM_AVR
+#undef ACE128_EEPROM_I2C
+#elif defined(ACE128_EEPROM_I2C)
+#undef ACE128_EEPROM_AVR
+#undef ACE128_EEPROM_NONE
+#elif defined(ARDUINO_ARCH_AVR)
+#define ACE128_EEPROM_AVR
+#else
+#define ACE128_EEPROM_NONE
+#endif
+
 // include types & constants of Wiring core API
 #include <Arduino.h>
 #include <Wire.h>
+
+// Select EEPROM library, if any
+#if defined(ACE128_EEPROM_AVR)
+#include <EEPROM.h>
+#elif defined(ACE128_EEPROM_I2C)
+#define ACE128_EEPROM_ADDR 0x50   // adjust to suit
+#endif
 // we store the encoder maps in program space
 #include <avr/pgmspace.h>
 
@@ -28,10 +57,13 @@ class ACE128
     // 0x38 - 0x3F PCF8574A
     // final optional eeAddr parameter sets and enables EEPROM state save for logical zero and multiturn position
     ACE128(uint8_t i2caddr, uint8_t *map);
-    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
     // direct pin constructors are similar but instead of the I2C address, you list the 8 arduino pins used
     ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map);
+#ifndef ACE128_EEPROM_NONE
+    // similar forms with EEPROM saves
+    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
     ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map, int16_t eeAddr);
+#endif
     void begin();                  // initializes IO expander, call from setup()
     uint8_t upos();                // returns logical position 0 -> 127
     int8_t pos();                  // returns logical position -64 -> +63
@@ -52,7 +84,12 @@ class ACE128
     uint8_t *_map;                 // pointer to PROGMEM map table
     int16_t _mpos;                 // multiturn offset
     int8_t _lastpos;               // last upos
+#ifndef ACE128_EEPROM_NONE
     int16_t _eeAddr;               // multiturn save location (2 bytes)
+    void _eeprom_read_settings(); // read _mpos and _zero from 
+    void _eeprom_write_mpos();    // write _mpos to eeprom
+    void _eeprom_write_zero();    // write _zero to eeprom 
+#endif
     int8_t _raw2pos(int8_t pos);   // convert rawPos() value to pos()
     uint8_t _pins[8];              // store pins for direct attach mode
 };
@@ -60,24 +97,23 @@ class ACE128
 
 // MCP23008 IO expander
 #define ACE128_MCP23008_ADDRESS 0x20
-#define ACE128_MCP23008_IODIR 0x00
-#define ACE128_MCP23008_IPOL 0x01
+#define ACE128_MCP23008_IODIR   0x00
+#define ACE128_MCP23008_IPOL    0x01
 #define ACE128_MCP23008_GPINTEN 0x02
-#define ACE128_MCP23008_DEFVAL 0x03
-#define ACE128_MCP23008_INTCON 0x04
-#define ACE128_MCP23008_IOCON 0x05
-#define ACE128_MCP23008_GPPU 0x06
-#define ACE128_MCP23008_INTF 0x07
-#define ACE128_MCP23008_INTCAP 0x08
-#define ACE128_MCP23008_GPIO 0x09
-#define ACE128_MCP23008_OLAT 0x0A
+#define ACE128_MCP23008_DEFVAL  0x03
+#define ACE128_MCP23008_INTCON  0x04
+#define ACE128_MCP23008_IOCON   0x05
+#define ACE128_MCP23008_GPPU    0x06
+#define ACE128_MCP23008_INTF    0x07
+#define ACE128_MCP23008_INTCAP  0x08
+#define ACE128_MCP23008_GPIO    0x09
+#define ACE128_MCP23008_OLAT    0x0A
 
 // PCF8574 family
-#define ACE128_PCF8574_ADDRESS 0x20
+#define ACE128_PCF8574_ADDRESS  0x20
 #define ACE128_PCF8574A_ADDRESS 0x38
 
 // Arduino pins direct - no I2C
-#define ARDUINO_PINS 0xff
+#define ACE128_ARDUINO_PINS     0xff
 
 #endif // ACE128_h
-
