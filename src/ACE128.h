@@ -1,6 +1,8 @@
+#ifndef ACE128_h
+#define ACE128_h
 /*
   ACE128.h - Bourns Absolute Contacting Encoder
-  Copyright (c) 2013,2015,2017,2018 Alastair Young.
+  Copyright (c) 2013-2019 Alastair Young.
   This project is licensed under the terms of the MIT license.
 
   This contains all of the source code. The main code has been moved from the cpp file to the .h
@@ -10,15 +12,18 @@
   on the little AVRs.
 */
 
-// ensure this library description is only included once
-#ifndef ACE128_h
-#define ACE128_h
+// Use these preprocessor #define statements to configure you project. 
+// Set them in your sketch before you include ACE128.h or uncomment them here to set them for all projects
 
-// Set up EEPROM storage option
+// Set up the EEPROM storage option. 
 // Include one of these to override default behavior
-// #define ACE128_EEPROM_AVR  // Default AVR internal EEPROM.h e.g. Arduino Uno, AtTiny ATmega ATtiny etc.
+// #define ACE128_EEPROM_AVR  // Internal EEPROM.h This is the default for AVR e.g. Arduino Uno, AtTiny ATmega ATtiny etc
 // #define ACE128_EEPROM_NONE // No EEPROM storage - default for non-AVR e.g. MKR series, SAM
 // #define ACE128_EEPROM_I2C  // I2C EEPROM - e.g.  Microchip 24CW160T
+
+// Enable MCP23008 support. 
+// Before V2.0.0 this was available by default. Now you need to set this flag.
+// #define ACE128_MCP23008 // Enable MCP23008 support
 
 // ensure mutual exclusion and defaults
 #if defined(ACE128_EEPROM_AVR)
@@ -60,7 +65,7 @@ class ACE128
     // example: ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678);
     // see make_encodermap example sketch for alternate pin mappings
     // Select with the following addresses
-    // 0x00 - 0x07 MCP23008 addresses 0x20-0x27. Backward compatible with earlier library revision
+    // 0x00 - 0x07 MCP23008 addresses 0x20-0x27. Requires ACE128_MCP23008 to be #defined
     // 0x20 - 0x27 PCF8574
     // 0x38 - 0x3F PCF8574A
     // final optional eeAddr parameter sets and enables EEPROM state save for logical zero and multiturn position
@@ -103,6 +108,7 @@ class ACE128
 };
 
 
+#if defined(MCP23008)
 // MCP23008 IO expander
 #define ACE128_MCP23008_ADDRESS 0x20
 #define ACE128_MCP23008_IODIR   0x00
@@ -116,6 +122,7 @@ class ACE128
 #define ACE128_MCP23008_INTCAP  0x08
 #define ACE128_MCP23008_GPIO    0x09
 #define ACE128_MCP23008_OLAT    0x0A
+#endif
 
 // PCF8574 family
 #define ACE128_PCF8574_ADDRESS  0x20
@@ -142,11 +149,13 @@ ACE128::ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr)
     _i2caddr = i2caddr;                      // save address
     _chip = ACE128_PCF8574A_ADDRESS;         // PCF8574 shares address space with MCP23008
   }
+#if defined(MCP23008)
   else                                       // use zero-indexed address to identify MCP23008 - backwards compatible
   {
     _i2caddr = (i2caddr & 0x7) | ACE128_MCP23008_ADDRESS;   // map lower bits to MCP23008
     _chip = ACE128_MCP23008_ADDRESS;                        // remember what chip
   }
+#endif
   _reverse = false;                        // clockwise
   _zero = 0;                               // set zero position
   _map = map;                              // mapping table in PROGMEM
@@ -181,7 +190,7 @@ ACE128::ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t p
 }
 
 // Initializer /////////////////////////////////////////////////////////////////
-// Call this fuction during setup to initialize MCP23008
+// Call this fuction during setup to initialize the chip
 
 void ACE128::begin()
 {
@@ -200,6 +209,7 @@ void ACE128::begin()
   else
   {
     Wire.beginTransmission(_i2caddr);
+#if defined(MCP23008)
     if (_chip == ACE128_MCP23008_ADDRESS)
     {
       Wire.write((uint8_t)ACE128_MCP23008_IODIR); // MCP23008 lets us blast all registers
@@ -216,6 +226,7 @@ void ACE128::begin()
       Wire.write((uint8_t)0x00);  // OLAT
     }
     else if (_chip == ACE128_PCF8574A_ADDRESS)
+#endif
     {
       Wire.write((uint8_t)0xFF);  // set all pins up. pulldown for input
     }
@@ -254,13 +265,15 @@ uint8_t ACE128::acePins(void)
   }
   else
   {
-    // read one byte from the GPIO
+    // read one byte from the chip
+#if defined(ACE128_MCP23008)
     if (_chip == ACE128_MCP23008_ADDRESS)
     {
       Wire.beginTransmission(_i2caddr);
       Wire.write((uint8_t)ACE128_MCP23008_GPIO);
       Wire.endTransmission();
     }
+#endif
     Wire.requestFrom(_i2caddr, 1);
     return (Wire.read());
   }
