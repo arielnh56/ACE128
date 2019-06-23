@@ -24,7 +24,7 @@
 // #define ACE128_EEPROM_ADDR 0x50  // address for the I2C chip. If you leave this undefined it defaults to 0x50
 
 // Enable MCP23008 support. 
-// Before V2.0.0 this was available by default. Now you need to set this flag.
+// Before v2.0.0 this was available by default. Now you need to set this flag.
 // #define ACE128_MCP23008 // Enable MCP23008 support
 
 // Use direct pin connection, disable pin expander code
@@ -375,7 +375,6 @@ uint8_t ACE128::getZero(void)
 }
 
 // set multiturn position
-// this also sets zero, so if you are saving zero, call setZero() afterwards.
 void ACE128::setMpos(int16_t mPos)
 {
   uint8_t rawpos = rawPos();

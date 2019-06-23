@@ -59,7 +59,7 @@ LiquidCrystal_PCF8574 lcd(0x27);  // 1602 LCD on 0x27
  *  and edit it there. If you do this, use the second #include format below
  */
 #include <ACE128.h>  // Include the ACE128.h from the library folder
-// #include <ACE128.h>  // Include the ACE128.h from the sketch folder
+// #include "ACE128.h"  // Include the ACE128.h from the sketch folder
 
 /*  Now we include the encoder map.
  *  This is a table of all the 256 possible pin combinations and how they map to the 128 gray code values. 
