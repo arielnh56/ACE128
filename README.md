@@ -9,65 +9,43 @@ This is a small 8 bit gray code rotary position sensor providing 128 unique posi
 This is a "digital knob" you can use to control your arduino project. It can
 also be used in motion control systems with a limited lifespan.
 
-This code is developed against the Arduino UNO R3. It should work on any Arduino. 
+This code is developed against the Arduino UNO R3 and Arduino MKR Wifi 1010. It should work on any Arduino. 
 
-The code currently supports the MCP23008, PCF8574 and PCF8574A I2C expanders
+See the ACE128test example sketch for detailed usage instructions.
 
-Select these with the following addresses
+By default the code supports the PCF8574 and PCF8574A I2C expanders, as used in the author's manufactured modules, and can save state
+to EEPROM on AVR microcontrollers. By default it *does not save state on SAM microcontrollers* as they do not have EEPROM.
 
-* 0x00 - 0x07 MCP23008 addresses 0x20-0x27. (This is backward compatible with an earlier library revision)
-* 0x20 - 0x27 PCF8574
-* 0x38 - 0x3F PCF8574A
+For basic testing of the manufactured modules use the ace128_0x20 and ace128_0x38 examples.
 
-Note that the MCP23008 and PCF8574 chips use the same i2c address range. Many LCD backpacks also use one of these chips. Be careful when mixing all this on the same bus to avoid duplicating addresses. To confuse things further, raw I2C addresses have the lowest order bit as a read/write signal, so some documents, like some of the PCF8574 datasheets, will refer to 0x40 and 0x70 which is 0x20 and 0x38 shifted left one bit.
+Note that some non-basic features can be enabled via uncommenting #defines in the ACE128.h include file. If the IDE is
+giving you grief editing this then copy it to your sketch directory and use
 
-You can also connect the ACE128 sensor directly to 8 Arduino pins, with an alternate constructor.
+#include "ACE128.h"
+
+with quotes instead of angle brackets. That will make it use your local copy.
+
+The non standard features include:
+* use of MCP23008 pin expander
+* use of arduino pins to talk directly to the Bourns encoder. This disables the pin expander code.
+* use of I2C EEPROMs to save state. These have longer life than the AVR EEPROM and provide storage for the SAM microcontrollers.
+* the ability to disable the state saving code altogether and save some flash memory.
 
 Installation
 --------------------------------------------------------------------------------
 
-This library now conforms to the library manager standard, so it needs no special instructions here.
+This library conforms to the library manager standard, so it needs no special instructions here.
 See https://www.arduino.cc/en/Guide/Libraries
 
-The enclosed exmple sketch ACE128test drives a 2x16 display via either and I2C backpack or direct from the Arduino, depending on whether 
-you comment out the LCD_I2C macro. 
-
-ACE128testpins tests the bare sensor connected to Arduino pins. The common pins on the sensor should be connected to ground.
-
-Public Methods
+Basic Usage
 --------------------------------------------------------------------------------
-```c++
-  // user-accessible "public" interface
-  public:
-    // constructor takes i2caddr (see above) and pointer to PROGMEM map table
-    // example: ACE128 myACE((uint8_t)0, (uint8_t*)encoderMap_12345678);
-    // see make_encodermap example sketch for alternate pin mappings 
-    ACE128(uint8_t i2caddr, uint8_t *map);
-    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
-    // direct pin constructors are similar but instead of the I2C address, you list the 8 arduino pins used
-    ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map);
-    ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map, int16_t eeAddr);    
-    void begin();                  // initializes IO expander or Arduino pins, call from setup()
-    uint8_t upos();                // returns logical position 0 -> 127
-    int8_t pos();                  // returns logical position -64 -> +63
-    int16_t mpos();                // returns multiturn position -32768 -> +32767
-    void setMpos(int16_t mPos);    // sets current position to multiturn value - also changes zero
-    void setZero();                // sets logical zero to current position
-    void setZero(uint8_t rawPos);  // sets logical zero position
-    uint8_t getZero();             // returns logical zero position
-    uint8_t rawPos();              // returns raw mechanical position
-    uint8_t acePins();             // returns gray code inputs
-    void reverse(boolean reverse); // set counter-clockwise operation
-```
-
-Usage
---------------------------------------------------------------------------------
-See the ACE128test and ACE128testpins examples. 
-* Include all the encoder maps you need (see below) to match the pin sequences
-of your ACE units. 
+See the ACE128test, ace128_0x20 and ace128_0x38 
+* Include all the encoder maps you need (see below) to match the pin sequences of your ACE units. 
+** the manufacrured modules all use the 87654321 encoder map as in the examples
 * Declare all your ACE128 objects using the ACE128 constructor. It takes an I2C address and a pointer to the encoder map.
-    An optional third integer can take a positive integer to show where to store zero info in eeprom. Allow for three bytes.
-* call the begin method for each ACE128 object from setup(). This will use the eeprom settings or fall back to setting the current position as zero.
+    An optional third integer can take a positive integer to show where to store zero info in eeprom. Allow for three bytes
+    for each module.
+* call the begin() method for each ACE128 object from setup(). This will use the eeprom settings or fall back to setting the current position as zero.
 * The pos() and upos() methods return the position relative to a logical zero
 position rather than the zero position returned by the encoder, which is in a
 mechanically arbitrary spot. When it rolls over the turns are stored for use by mpos and saved in eeprom
@@ -76,7 +54,8 @@ refer to it.
 * there are three setting functions
 * setZero()   - set the current location to zero (does not update multiturn)
 * setZero(int)   -  sets the zero point to the 0-127 number given
-* setMpos(int)    - sets the current location as this multiturn value
+* setMpos(int)    - sets the current location as this multiturn value. This adjust logical zero appropriately.
+* reverse(bool) - if true, makes it rising anticlockwise
 
 Encoder Maps
 --------------------------------------------------------------------------------
@@ -95,6 +74,6 @@ When breadboarding, remember the pins on the sensor are numbered anticlockwise a
 
 comments and feedback via https://github.com/arielnh56/ACE128
 
-more details and videos at https://www.tindie.com/products/arielnh56/high-resolution-absolute-encoder-128-positions/
+more details and videos at https://www.tindie.com/products/8759/
 
-buy assembled units at https://www.tindie.com/products/arielnh56/digital-knob-for-arduino-i2c-absolute-encoder/
+buy assembled units at https://www.tindie.com/products/8759/
