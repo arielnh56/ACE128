@@ -1,4 +1,5 @@
 /* ACE PIN Serial Tester
+   IMPORTANT: for this to work you must uncomment "#define ACE128_ARDUINO_PINS" in ACE128.h
    this displays the current position in all five forms on the serial monitor
      pin = the raw gray-code from the pins. As you rotate this will rise and fall in steps
            of 1,2,4,8,16,32,64 or 128
@@ -11,7 +12,6 @@
      upos = this is the raw value converted to the range 0 - 127 relative to the logical zero
      mpos = this is like pos, but goes multiturn -32768 - 32767
 */
-
 
 // Include the encoder library and maps
 #include <ACE128.h>  // Absolute Contact Encoder

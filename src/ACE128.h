@@ -13,17 +13,26 @@
 */
 
 // Use these preprocessor #define statements to configure you project. 
-// Set them in your sketch before you include ACE128.h or uncomment them here to set them for all projects
+// Uncomment them here to set them for all projects
+// Unfortuately due to the wierdness of the Arduino IDE, #defines in your sketch don't propagate here
 
 // Set up the EEPROM storage option. 
 // Include one of these to override default behavior
 // #define ACE128_EEPROM_AVR  // Internal EEPROM.h This is the default for AVR e.g. Arduino Uno, AtTiny ATmega ATtiny etc
 // #define ACE128_EEPROM_NONE // No EEPROM storage - default for non-AVR e.g. MKR series, SAM
 // #define ACE128_EEPROM_I2C  // I2C EEPROM - e.g.  Microchip 24CW160T
+// #define ACE128_EEPROM_ADDR 0x50  // address for the I2C chip. If you leave this undefined it defaults to 0x50
 
 // Enable MCP23008 support. 
 // Before V2.0.0 this was available by default. Now you need to set this flag.
 // #define ACE128_MCP23008 // Enable MCP23008 support
+
+// Use direct pin connection, disable pin expander code
+// Also disables all I2C activity unless ACE128_EEPROM_I2C is defined
+// Prior to v2.0.0 this was available by default along with the pin expanders
+// #define ACE128_ARDUINO_PINS
+
+// end of user configurable #define statements
 
 // ensure mutual exclusion and defaults
 #if defined(ACE128_EEPROM_AVR)
@@ -41,9 +50,15 @@
   #define ACE128_EEPROM_NONE
 #endif
 
+#if defined(ACE128_EEPROM_I2C) || !defined(ACE128_ARDUINO_PINS)
+  #define ACE128_I2C
+#endif
+
 // include types & constants of Wiring core API
 #include <Arduino.h>
-#include <Wire.h>
+#ifdef ACE128_I2C
+  #include <Wire.h>
+#endif
 
 // Select EEPROM stuff, if any
 #if defined(ACE128_EEPROM_AVR)
@@ -69,13 +84,17 @@ class ACE128
     // 0x20 - 0x27 PCF8574
     // 0x38 - 0x3F PCF8574A
     // final optional eeAddr parameter sets and enables EEPROM state save for logical zero and multiturn position
-    ACE128(uint8_t i2caddr, uint8_t *map);
     // direct pin constructors are similar but instead of the I2C address, you list the 8 arduino pins used
-    ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map);
-#ifndef ACE128_EEPROM_NONE
-    // similar forms with EEPROM saves
-    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
+#ifdef ACE128_ARDUINO_PINS
+  #ifndef ACE128_EEPROM_NONE
     ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map, int16_t eeAddr);
+  #endif
+    ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map);
+#else
+  #ifndef ACE128_EEPROM_NONE
+    ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr);
+  #endif
+    ACE128(uint8_t i2caddr, uint8_t *map);
 #endif
     void begin();                  // initializes IO expander, call from setup()
     uint8_t upos();                // returns logical position 0 -> 127
@@ -90,10 +109,8 @@ class ACE128
     void reverse(boolean reverse); // set counter-clockwise operation
     // library-accessible "private" interface
   private:
-    uint8_t _chip;                 // chip type - derived from i2c address
     uint8_t _zero;                 // raw position of logical zero
     int8_t _reverse;               // counter-clockwise
-    int _i2caddr;                  // i2c bus address
     uint8_t *_map;                 // pointer to PROGMEM map table
     int16_t _mpos;                 // multiturn offset
     int8_t _lastpos;               // last upos
@@ -104,75 +121,50 @@ class ACE128
     void _eeprom_write_zero();    // write _zero to eeprom 
 #endif
     int8_t _raw2pos(int8_t pos);   // convert rawPos() value to pos()
+#ifdef ACE128_ARDUINO_PINS
     uint8_t _pins[8];              // store pins for direct attach mode
+#else
+    uint8_t _chip;                 // chip type - derived from i2c address
+    int _i2caddr;                  // i2c bus address
+#endif
 };
 
 
-#if defined(MCP23008)
+#ifdef ACE128_MCP23008
 // MCP23008 IO expander
-#define ACE128_MCP23008_ADDRESS 0x20
-#define ACE128_MCP23008_IODIR   0x00
-#define ACE128_MCP23008_IPOL    0x01
-#define ACE128_MCP23008_GPINTEN 0x02
-#define ACE128_MCP23008_DEFVAL  0x03
-#define ACE128_MCP23008_INTCON  0x04
-#define ACE128_MCP23008_IOCON   0x05
-#define ACE128_MCP23008_GPPU    0x06
-#define ACE128_MCP23008_INTF    0x07
-#define ACE128_MCP23008_INTCAP  0x08
-#define ACE128_MCP23008_GPIO    0x09
-#define ACE128_MCP23008_OLAT    0x0A
+  #define ACE128_MCP23008_ADDRESS 0x20
+  #define ACE128_MCP23008_IODIR   0x00
+  #define ACE128_MCP23008_IPOL    0x01
+  #define ACE128_MCP23008_GPINTEN 0x02
+  #define ACE128_MCP23008_DEFVAL  0x03
+  #define ACE128_MCP23008_INTCON  0x04
+  #define ACE128_MCP23008_IOCON   0x05
+  #define ACE128_MCP23008_GPPU    0x06
+  #define ACE128_MCP23008_INTF    0x07
+  #define ACE128_MCP23008_INTCAP  0x08
+  #define ACE128_MCP23008_GPIO    0x09
+  #define ACE128_MCP23008_OLAT    0x0A
 #endif
 
 // PCF8574 family
 #define ACE128_PCF8574_ADDRESS  0x20
 #define ACE128_PCF8574A_ADDRESS 0x38
 
-// Arduino pins direct - no I2C
-#define ACE128_ARDUINO_PINS     0xff
 
 // former cpp code starts here
 
 // Constructor /////////////////////////////////////////////////////////////////
 // Function that handles the creation and setup of instances
 
-#ifdef ACE128_EEPROM_NONE
-ACE128::ACE128(uint8_t i2caddr, uint8_t *map)
-#else
-ACE128::ACE128(uint8_t i2caddr, uint8_t *map) : ACE128::ACE128(i2caddr, map, -1) {}
-ACE128::ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr)
-#endif
-{
-  // initialize this instance's variables
-  if ((i2caddr & 0x78) == ACE128_PCF8574_ADDRESS || (i2caddr & 0x78) == ACE128_PCF8574A_ADDRESS)
-  {
-    _i2caddr = i2caddr;                      // save address
-    _chip = ACE128_PCF8574A_ADDRESS;         // PCF8574 shares address space with MCP23008
-  }
-#if defined(MCP23008)
-  else                                       // use zero-indexed address to identify MCP23008 - backwards compatible
-  {
-    _i2caddr = (i2caddr & 0x7) | ACE128_MCP23008_ADDRESS;   // map lower bits to MCP23008
-    _chip = ACE128_MCP23008_ADDRESS;                        // remember what chip
-  }
-#endif
-  _reverse = false;                        // clockwise
-  _zero = 0;                               // set zero position
-  _map = map;                              // mapping table in PROGMEM
-#ifndef ACE128_EEPROM_NONE
-  _eeAddr = eeAddr;                       // multiturn save location
-#endif
-}
-
-#ifdef ACE128_EEPROM_NONE
+#ifdef ACE128_ARDUINO_PINS
+  #ifdef ACE128_EEPROM_NONE
 ACE128::ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map)
-#else
+  #else
 ACE128::ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map) : ACE128::ACE128(pin0, pin1, pin2, pin3, pin4, pin5, pin6, pin7, map, -1) {}
 ACE128::ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pin4, uint8_t pin5, uint8_t pin6, uint8_t pin7, uint8_t *map, int16_t eeAddr)
-#endif
+  #endif
 {
   // initialize this instance's variables
-  _chip = ACE128_ARDUINO_PINS;
   _pins[0] = pin0;
   _pins[1] = pin1;
   _pins[2] = pin2;
@@ -184,54 +176,79 @@ ACE128::ACE128(uint8_t pin0, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t p
   _reverse = false;                        // clockwise
   _zero = 0;                               // set zero position
   _map = map;                              // mapping table in PROGMEM
-#ifndef ACE128_EEPROM_NONE
+  #ifndef ACE128_EEPROM_NONE
   _eeAddr = eeAddr;                       // multiturn save location
-#endif
+  #endif
 }
+#else // !ACE128_ARDUINO_PINS
+  #ifdef ACE128_EEPROM_NONE
+ACE128::ACE128(uint8_t i2caddr, uint8_t *map)
+  #else
+ACE128::ACE128(uint8_t i2caddr, uint8_t *map) : ACE128::ACE128(i2caddr, map, -1) {}
+ACE128::ACE128(uint8_t i2caddr, uint8_t *map, int16_t eeAddr)
+  #endif
+{
+  // initialize this instance's variables
+  if ((i2caddr & 0x78) == ACE128_PCF8574_ADDRESS || (i2caddr & 0x78) == ACE128_PCF8574A_ADDRESS)
+  {
+    _i2caddr = i2caddr;                      // save address
+    _chip = ACE128_PCF8574A_ADDRESS;         // PCF8574 shares address space with MCP23008
+  }
+  #if defined(ACE128_MCP23008)
+  else                                       // use zero-indexed address to identify MCP23008 - backwards compatible
+  {
+    _i2caddr = (i2caddr & 0x7) | ACE128_MCP23008_ADDRESS;   // map lower bits to MCP23008
+    _chip = ACE128_MCP23008_ADDRESS;                        // remember what chip
+  }
+  #endif
+  _reverse = false;                        // clockwise
+  _zero = 0;                               // set zero position
+  _map = map;                              // mapping table in PROGMEM
+  #ifndef ACE128_EEPROM_NONE
+  _eeAddr = eeAddr;                       // multiturn save location
+  #endif
+}
+#endif // ACE128_ARDUINO_PINS
 
 // Initializer /////////////////////////////////////////////////////////////////
 // Call this fuction during setup to initialize the chip
 
 void ACE128::begin()
 {
-  // initialize the chip
-#ifndef ACE128_EEPROM_I2C    // if we have I2C EEPROM, we need the Wire.begin()
-  if (_chip != ACE128_ARDUINO_PINS)
+#ifdef ACE128_I2C    // if we are using I2C, initialize it
+  Wire.begin();      // join i2c bus (address optional for master)
 #endif
-    Wire.begin();        // join i2c bus (address optional for master)
 
-  if (_chip == ACE128_ARDUINO_PINS)
-  {
-    for (uint8_t i = 0; i <= 7; i++) {
-      pinMode(_pins[i], INPUT_PULLUP);
-    }
+#ifdef ACE128_ARDUINO_PINS
+  // initialize the pins
+  for (uint8_t i = 0; i <= 7; i++) {
+    pinMode(_pins[i], INPUT_PULLUP);
   }
-  else
+#else
+  Wire.beginTransmission(_i2caddr);
+  #ifdef ACE128_MCP23008
+  if (_chip == ACE128_MCP23008_ADDRESS)
   {
-    Wire.beginTransmission(_i2caddr);
-#if defined(MCP23008)
-    if (_chip == ACE128_MCP23008_ADDRESS)
-    {
-      Wire.write((uint8_t)ACE128_MCP23008_IODIR); // MCP23008 lets us blast all registers
-      Wire.write((uint8_t)0xFF);  // IODIR all inputs
-      Wire.write((uint8_t)0x00);  // IPOL  do not invert
-      Wire.write((uint8_t)0x00);  // GPINTEN disable interrupt
-      Wire.write((uint8_t)0x00);  // DEFVAL disabled
-      Wire.write((uint8_t)0x00);  // INTCON disabled
-      Wire.write((uint8_t)0x00);  // IOCON no special config
-      Wire.write((uint8_t)0xFF);  // GPPU pullup all inputs
-      Wire.write((uint8_t)0x00);  // INTF disabled
-      Wire.write((uint8_t)0x00);  // INTCAP disabled
-      Wire.write((uint8_t)0x00);  // GPIO
-      Wire.write((uint8_t)0x00);  // OLAT
-    }
-    else if (_chip == ACE128_PCF8574A_ADDRESS)
+    Wire.write((uint8_t)ACE128_MCP23008_IODIR); // MCP23008 lets us blast all registers
+    Wire.write((uint8_t)0xFF);  // IODIR all inputs
+    Wire.write((uint8_t)0x00);  // IPOL  do not invert
+    Wire.write((uint8_t)0x00);  // GPINTEN disable interrupt
+    Wire.write((uint8_t)0x00);  // DEFVAL disabled
+    Wire.write((uint8_t)0x00);  // INTCON disabled
+    Wire.write((uint8_t)0x00);  // IOCON no special config
+    Wire.write((uint8_t)0xFF);  // GPPU pullup all inputs
+    Wire.write((uint8_t)0x00);  // INTF disabled
+    Wire.write((uint8_t)0x00);  // INTCAP disabled
+    Wire.write((uint8_t)0x00);  // GPIO
+    Wire.write((uint8_t)0x00);  // OLAT
+  }
+  else if (_chip == ACE128_PCF8574A_ADDRESS)
+  #endif // ACE128_MCP23008
+  {
+    Wire.write((uint8_t)0xFF);  // set all pins up. pulldown for input
+  }
+  Wire.endTransmission();
 #endif
-    {
-      Wire.write((uint8_t)0xFF);  // set all pins up. pulldown for input
-    }
-    Wire.endTransmission();
-  }
 #ifndef ACE128_EEPROM_NONE
   if (_eeAddr >= 0)
   {
@@ -255,28 +272,25 @@ void ACE128::begin()
 // If you ever get a 255 from a mapping table, something is wrong
 uint8_t ACE128::acePins(void)
 {
-  if (_chip == ACE128_ARDUINO_PINS)
-  {
-    uint8_t pinbits = 0;
-    for (uint8_t pin = 0; pin <= 7; pin++) {
-      pinbits |= (uint8_t)digitalRead(_pins[pin]) << pin;
-    }
-    return(pinbits);
+#ifdef ACE128_ARDUINO_PINS
+  uint8_t pinbits = 0;
+  for (uint8_t pin = 0; pin <= 7; pin++) {
+    pinbits |= (uint8_t)digitalRead(_pins[pin]) << pin;
   }
-  else
+  return(pinbits);
+#else
+  // read one byte from the chip
+  #if defined(ACE128_MCP23008)
+  if (_chip == ACE128_MCP23008_ADDRESS)
   {
-    // read one byte from the chip
-#if defined(ACE128_MCP23008)
-    if (_chip == ACE128_MCP23008_ADDRESS)
-    {
-      Wire.beginTransmission(_i2caddr);
-      Wire.write((uint8_t)ACE128_MCP23008_GPIO);
-      Wire.endTransmission();
-    }
+    Wire.beginTransmission(_i2caddr);
+    Wire.write((uint8_t)ACE128_MCP23008_GPIO);
+    Wire.endTransmission();
+  }
+  #endif
+  Wire.requestFrom(_i2caddr, 1);
+  return (Wire.read());
 #endif
-    Wire.requestFrom(_i2caddr, 1);
-    return (Wire.read());
-  }
 }
 
 // returns current raw position
@@ -389,7 +403,7 @@ void ACE128::reverse(boolean reverse)
 // read _mpos and _zero from
 void ACE128::_eeprom_read_settings()
 {
-#if defined(ACE128_EEPROM_I2C)
+  #if defined(ACE128_EEPROM_I2C)
   Wire.beginTransmission(ACE128_EEPROM_ADDR);
   Wire.write((uint8_t) (_eeAddr >> 8));
   Wire.write((uint8_t) _eeAddr );
@@ -397,10 +411,10 @@ void ACE128::_eeprom_read_settings()
   Wire.requestFrom(ACE128_EEPROM_ADDR, 3);
   _mpos = (Wire.read() + (Wire.read() << 8));
   _zero = (Wire.read());
-#elif defined(ACE128_EEPROM_AVR)
+  #elif defined(ACE128_EEPROM_AVR)
   EEPROM.get(_eeAddr, _mpos);
   EEPROM.get(_eeAddr + sizeof(_mpos), _zero);
-#endif
+  #endif
 }
 
 // I2C EEPROM write functions are very simple to suit this application
@@ -410,31 +424,31 @@ void ACE128::_eeprom_read_settings()
 // write _mpos to eeprom
 void ACE128::_eeprom_write_mpos()
 {
-#if defined(ACE128_EEPROM_I2C)
+  #if defined(ACE128_EEPROM_I2C)
   Wire.beginTransmission(ACE128_EEPROM_ADDR);
   Wire.write((uint8_t) (_eeAddr >> 8));
   Wire.write((uint8_t) _eeAddr );
   Wire.write((uint8_t) _mpos );
   Wire.write((uint8_t) (_mpos >> 8));
   Wire.endTransmission();
-#elif defined(ACE128_EEPROM_AVR)
+  #elif defined(ACE128_EEPROM_AVR)
   EEPROM.put(_eeAddr, _mpos);
-#endif
+  #endif
 }
 
 // write _zero to eeprom
 void ACE128::_eeprom_write_zero()
 {
   uint16_t eeAddr = eeAddr + sizeof(_mpos);
-#if defined(ACE128_EEPROM_I2C)
+  #if defined(ACE128_EEPROM_I2C)
   Wire.beginTransmission(ACE128_EEPROM_ADDR);
   Wire.write((uint8_t) (eeAddr >> 8));
   Wire.write((uint8_t) eeAddr );
   Wire.write((uint8_t) _zero );
   Wire.endTransmission();
-#elif defined(ACE128_EEPROM_AVR)
+  #elif defined(ACE128_EEPROM_AVR)
   EEPROM.update(eeAddr, _zero);
-#endif
+  #endif
 }
 
 #endif // ACE128_EEPROM_NONE
