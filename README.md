@@ -58,7 +58,7 @@ or copy to your sketch folder for easier editing of feature flags and use
 Note that all of the code is included in the ACE128.h file - there is no ACE128.cpp file any more. This was necessary to implement the feature flags in the Arduino IDE environment. (ask me over a beer)
 
 * Include all the encoder maps you need (see below) to match the pin sequences of your ACE units. 
-** the manufactured modules all use the 87654321 encoder map as in the examples
+    * the manufactured modules all use the 87654321 encoder map as in the examples
 * Declare all your ACE128 objects using the ACE128 constructor. It takes an I2C address and a pointer to the encoder map.
     An optional third parameter can take a positive integer to show where to store zero info in eeprom. Allow for three bytes
     for each module.
