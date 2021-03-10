@@ -17,7 +17,7 @@
 // Unfortuately due to the wierdness of the Arduino IDE, #defines in your sketch don't propagate here
 
 // Set up the EEPROM storage option. 
-// Include one of these to override default behavior
+// Include ONE of these to override default behavior
 // #define ACE128_EEPROM_AVR  // Internal EEPROM.h This is the default for AVR e.g. Arduino Uno, AtTiny ATmega ATtiny etc
 // #define ACE128_EEPROM_NONE // No EEPROM storage - default for non-AVR e.g. MKR series, SAM
 // #define ACE128_EEPROM_I2C  // I2C EEPROM - e.g.  Microchip 24CW160T
@@ -126,6 +126,9 @@ class ACE128
 #else
     uint8_t _chip;                 // chip type - derived from i2c address
     int _i2caddr;                  // i2c bus address
+#endif
+#ifdef ACE128_EEPROM_I2C
+    int16_t _mpos_i2c;              // mpos value last seen in i2c eeprom
 #endif
 };
 
@@ -409,6 +412,7 @@ void ACE128::_eeprom_read_settings()
   Wire.endTransmission(false);
   Wire.requestFrom(ACE128_EEPROM_ADDR, 3);
   _mpos = (Wire.read() + (Wire.read() << 8));
+  _mpos_i2c = _mpos;
   _zero = (Wire.read());
   #elif defined(ACE128_EEPROM_AVR)
   EEPROM.get(_eeAddr, _mpos);
@@ -417,13 +421,14 @@ void ACE128::_eeprom_read_settings()
 }
 
 // I2C EEPROM write functions are very simple to suit this application
-// Note no update function. I2C EEPROM has 10X endurance of Atmega EEPROM
-// which in turn has 2X endurance of ACE-128 sensor. Not worth the space it takes to code...
+// Note no update function (read before write). We just compare to cached value.
 
 // write _mpos to eeprom
 void ACE128::_eeprom_write_mpos()
 {
   #if defined(ACE128_EEPROM_I2C)
+  if (_mpos == _mpos_i2c) return; // if we didn't change it, don't write it.
+  _mpos_i2c = _mpos;
   Wire.beginTransmission(ACE128_EEPROM_ADDR);
   Wire.write((uint8_t) (_eeAddr >> 8));
   Wire.write((uint8_t) _eeAddr );

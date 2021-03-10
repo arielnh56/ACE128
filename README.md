@@ -11,7 +11,7 @@ also be used in motion control systems with a limited lifespan.
 
 This code is developed against the Arduino UNO R3 and Arduino MKR Wifi 1010. 
 
-It should work on any Arduino without modification to drive the sensor via my PCF8574(A) backpack modules via the I2C bus. The I2C bus must be correctly wired and include appropriate pullup resistors.
+It should work on any Arduino without modification to read the sensor via my PCF8574(A) backpack modules via the I2C bus. The I2C bus must be correctly wired and include appropriate pullup resistors.
 
 For basic testing of the manufactured modules use the ace128_0x20 and ace128_0x38 examples. These will send output to the serial monitor at 9600 baud.
 
@@ -23,11 +23,9 @@ not have EEPROM - this requires a separate I2C EEPROM chip and tweaking the libr
 
 The following features can be enabled via uncommenting #defines in the ACE128.h include file:
 * use of MCP23008 pin expander
-* use of Arduino pins to talk directly to the Bourns encoder. This disables the pin expander code.
+* use of Arduino pins to talk directly to the Bourns encoder. This disables the pin expander code. See the ace128pintest example.
 * use of I2C EEPROMs to save state. These have longer life than the AVR EEPROM and provide storage for the SAM microcontrollers.
 * the ability to disable the state saving code altogether and save some flash memory.
-
-Full instruction on these feature are in the library comments.
 
 If the IDE is giving you grief editing ACE128.h then copy it to your sketch directory and use
 
@@ -45,7 +43,7 @@ See https://www.arduino.cc/en/Guide/Libraries
 
 Basic Usage
 --------------------------------------------------------------------------------
-See the ACE128test, ace128_0x20 and ace128_0x38 example sketches.
+See the ACE128test example sketch for more detailed instructions.
 
 Include the library, either from the library folder with
 ```c++
@@ -65,7 +63,7 @@ Note that all of the code is included in the ACE128.h file - there is no ACE128.
 * call the begin() method for each ACE128 object from setup(). This will use the eeprom settings or fall back to setting the current position as logical zero.
 * The pos() and upos() methods return the position relative to a logical zero
 position rather than the zero position returned by the encoder, which is in a
-mechanically arbitrary spot. When it rolls over the turns are stored for use by mpos and saved in eeprom
+mechanically arbitrary spot. When it rolls over the turns are stored for use by mpos and optionally saved in eeprom.
 * Once per loop(): call pos(), upos(), or mpos() and store the value in a variable. Accessing the I2C bus takes some cycles,
 so don't call pos() everytime you want to refer to it. 
 * there are three setting functions

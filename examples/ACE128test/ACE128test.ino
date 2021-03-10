@@ -2,12 +2,15 @@
  *  
  *  This demo provides examples of all the options and functions available in this library.
  *  You should be able to find everything you need from here to use in your own sketch.
- *  This makes is very long, detailed and wordy.
+ *  This makes it very long, detailed and wordy.
  *  
  *  See the ace128_0x20 and ace128_0x38 examples for short specific tests for the manufactured modules.
  *  
  *  As distributed it can be used to test the functionality of the Absolute Encoder modules 
  *  that I make and distribute online on AVR platforms e.g. Arduino Unos.
+ *  
+ *  This is the sketch I use to test my modules before packaging. It first probes the bus to find the chip, then watches
+ *  while the sensor pins all show activity. After that it displays position output in 5 forms.
  *  
  *  If you wire a button between pin 13 and ground, you can test setting logical zero
  *  
@@ -88,12 +91,12 @@ LiquidCrystal_PCF8574 lcd(0x27);  // 1602 LCD on 0x27
  *  There are 4 constructors available. Providing a choice of I2C or direct pin mode and with or without EEPROM state storage
  */
 ACE128 myACE(ACE_ADDR, (uint8_t*)encoderMap_87654321); // I2C without using EEPROM
-// the EEPROM contructor is not available on SAM based platforms unless ACE128_I2C_EEPROM is defined in ACE128.h
+// the EEPROM contructor is not available on SAM based (MKR) platforms unless ACE128_I2C_EEPROM is defined in ACE128.h
 //ACE128 myACE(ACE_ADDR, (uint8_t*)encoderMap_87654321, 0); // I2C using EEPROM address 0
 
 /* 
  *  If wiring directly to the ACE128 sensor, the constructors below are enabled by defining ACE128_ARDUINO_PINS
- *  in ACE128.h - this also disable I2C chip capabilities.
+ *  in ACE128.h - this also disables I2C pin expander chip capabilities.
  *  In this case the 8 numbers identify arduino digital pins. So you can shuffle those numbers around instead of 
  *  changing the encoder map. Have fun!
  */
@@ -124,6 +127,7 @@ void setup() {
 #endif
   // this bit of code probes the bus to see if it can talk to the chip
   // not required - just for debug and testing
+  Wire.begin();
   int error = 1;
   while (error != 0) {
 #ifdef DISPLAY_SERIAL
@@ -206,7 +210,7 @@ void loop() {
   mpos = myACE.mpos();               // get multiturn position - signed -32768 to +32767
 
   // And you're done. 
-  // The rest of this is display output that I use for module testin
+  // The rest of this is display output that I use for module testing
   if (pinPos != oldPos) {            // did we move?
     seen |= pinPos ^ oldPos;         // what changed?
     oldPos = pinPos;                 // remember where we are
