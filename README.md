@@ -99,4 +99,4 @@ comments and feedback via https://github.com/arielnh56/ACE128
 
 more details and videos at https://www.tindie.com/products/8759/
 
-buy assembled units at https://www.tindie.com/products/8759/ https://www.tindie.com/products/18118/
+buy assembled units at https://redhunterstore.etsy.com/listing/1152703616/absolute-encoder-module-for-arduino
